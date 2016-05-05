@@ -243,6 +243,25 @@ class CommonClient(object):
 
         self.run_command('export', cmd)
 
+    def diff(self, prev, postv='HEAD'):
+        ret = {'modified':[], 'added':[], 'deleted':[]}
+        args = []
+        args += ['-r', str(prev) + ':' + str(postv)]
+        args += ['--summarize', '--xml']
+
+        result = self.run_command('diff', args, combine=True)
+        root = xml.etree.ElementTree.fromstring(result)
+
+        list_ = root.findall('paths/path')
+        for entry in list_:
+                entry_attr = entry.attrib
+
+                item = entry_attr['item']
+                if( (item == 'modified' or item == 'added' or item == 'deleted') and entry_attr['kind'] == 'file' ):
+                    ret[item].append(entry.text)
+
+        return ret
+
     def list(self, extended=False, rel_path=None):
         full_url_or_path = self.__url_or_path
         if rel_path is not None:
